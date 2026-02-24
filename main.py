@@ -10,7 +10,7 @@ from packaging import version
 from ai_handler import process_text
 
 CURRENT_VERSION = "1.0.0" 
-UPDATE_URL = "https://raw.githubusercontent.com/Fahrizal0112/NeuralBoard/main/version.json"
+UPDATE_URL = "https://raw.githubusercontent.com/Fahrizal0112/NeuralBoard/refs/heads/main/version.json"
 
 SETTINGS_FILE = "settings.json"
 
