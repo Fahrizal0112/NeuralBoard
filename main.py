@@ -133,7 +133,7 @@ def main(page: ft.Page):
             page.update()
             
     page.pubsub.subscribe(on_log_message)
-    page.title = "NeuralBoard - AI Smart Clipboard v1.0.0"
+    page.title = "NeuralBoard - AI Smart Clipboard v1.0.1"
     page.window.width = 500
     page.window.height = 750
     page.window.always_on_top = True
