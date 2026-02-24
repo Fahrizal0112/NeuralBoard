@@ -5,7 +5,12 @@ import threading
 import time
 import json
 import os
+import requests
+from packaging import version
 from ai_handler import process_text
+
+CURRENT_VERSION = "1.0.0" 
+UPDATE_URL = "https://raw.githubusercontent.com/Fahrizal0112/NeuralBoard/main/version.json"
 
 SETTINGS_FILE = "settings.json"
 
@@ -144,6 +149,59 @@ def main(page: ft.Page):
     app_state["provider"] = saved_provider
     app_state["model_name"] = saved_model
     app_state["api_key"] = saved_api_key
+
+    # --- LOGIKA CEK UPDATE ---
+    def check_for_update():
+        try:
+            # 1. Ambil data dari server
+            response = requests.get(UPDATE_URL, timeout=5)
+            data = response.json()
+            
+            latest_version = data.get('latest_version')
+            download_url = data.get('download_url')
+            release_note = data.get('message', 'Update tersedia!')
+
+            # 2. Bandingkan versi
+            if latest_version and version.parse(latest_version) > version.parse(CURRENT_VERSION):
+                show_update_dialog(latest_version, download_url, release_note)
+            else:
+                log("Aplikasi sudah versi terbaru.")
+                
+        except Exception as e:
+            log(f"Gagal cek update: {e}")
+
+    # --- UI DIALOG UPDATE ---
+    def show_update_dialog(new_ver, url, note):
+        def close_dlg(e):
+            dlg.open = False
+            page.update()
+
+        def open_url(e):
+            page.launch_url(url)
+            close_dlg(e)
+
+        dlg = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Update Tersedia! 🚀"),
+            content=ft.Column([
+                ft.Text(f"Versi baru: {new_ver}"),
+                ft.Text(f"Versi kamu: {CURRENT_VERSION}"),
+                ft.Divider(),
+                ft.Text(f"Catatan: {note}")
+            ], tight=True),
+            actions=[
+                ft.TextButton("Nanti Saja", on_click=close_dlg),
+                ft.ElevatedButton("Update Sekarang", on_click=open_url),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+        
+        page.dialog = dlg
+        dlg.open = True
+        page.update()
+
+    # Panggil fungsi cek di background thread
+    threading.Thread(target=check_for_update, daemon=True).start()
 
     def toggle_listening(e):
         app_state["is_listening"] = e.control.value
