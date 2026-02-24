@@ -6,6 +6,7 @@ import time
 import json
 import os
 import requests
+import webbrowser
 from packaging import version
 from ai_handler import process_text
 
@@ -152,22 +153,30 @@ def main(page: ft.Page):
 
     # --- LOGIKA CEK UPDATE ---
     def check_for_update():
+        print(">>> Check Update Memulai...")
         try:
-            # 1. Ambil data dari server
-            response = requests.get(UPDATE_URL, timeout=5)
+            # Beri sedikit jeda agar Flet selesai render UI utama
+            time.sleep(1)
+            print(">>> Melakukan fetch JSON...")
+            # 1. Ambil data dari server (tambah timestamp ?t= agar tidak ter-cache oleh GitHub Raw)
+            response = requests.get(f"{UPDATE_URL}?t={int(time.time())}", timeout=5)
             data = response.json()
+            print(f">>> JSON Diterima: {data}")
             
             latest_version = data.get('latest_version')
             download_url = data.get('download_url')
             release_note = data.get('message', 'Update tersedia!')
 
             # 2. Bandingkan versi
+            print(f">>> Latest: {latest_version}, Current: {CURRENT_VERSION}")
             if latest_version and version.parse(latest_version) > version.parse(CURRENT_VERSION):
+                print(">>> Menjalankan show_update_dialog()")
                 show_update_dialog(latest_version, download_url, release_note)
             else:
                 log("Aplikasi sudah versi terbaru.")
                 
         except Exception as e:
+            print(f">>> Gagal cek update (Exception): {e}")
             log(f"Gagal cek update: {e}")
 
     # --- UI DIALOG UPDATE ---
@@ -177,7 +186,7 @@ def main(page: ft.Page):
             page.update()
 
         def open_url(e):
-            page.launch_url(url)
+            webbrowser.open(url)
             close_dlg(e)
 
         dlg = ft.AlertDialog(
@@ -191,12 +200,13 @@ def main(page: ft.Page):
             ], tight=True),
             actions=[
                 ft.TextButton("Nanti Saja", on_click=close_dlg),
-                ft.ElevatedButton("Update Sekarang", on_click=open_url),
+                ft.TextButton("Update Sekarang", on_click=open_url), # Berubah dari Elevated untuk Flet 0.80
             ],
             actions_alignment=ft.MainAxisAlignment.END,
         )
         
-        page.dialog = dlg
+        # Tambahkan ke overlay dan buka (Flet baru / lama)
+        page.overlay.append(dlg)
         dlg.open = True
         page.update()
 
