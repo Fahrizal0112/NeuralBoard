@@ -9,7 +9,7 @@ import requests
 from packaging import version
 from ai_handler import process_text
 
-CURRENT_VERSION = "1.0.1" 
+CURRENT_VERSION = "1.0.0" 
 UPDATE_URL = "https://raw.githubusercontent.com/Fahrizal0112/NeuralBoard/refs/heads/main/version.json"
 
 SETTINGS_FILE = "settings.json"
@@ -132,7 +132,7 @@ def main(page: ft.Page):
             page.update()
             
     page.pubsub.subscribe(on_log_message)
-    page.title = "NeuralBoard - AI Smart Clipboard"
+    page.title = "NeuralBoard - AI Smart Clipboard v1.0.0"
     page.window.width = 500
     page.window.height = 750
     page.window.always_on_top = True
