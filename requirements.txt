@@ -1,0 +1,7 @@
+flet
+keyboard
+pyperclip
+python-dotenv
+openai
+google-generativeai
+requests
