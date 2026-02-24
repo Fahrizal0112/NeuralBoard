@@ -10,7 +10,7 @@ import webbrowser
 from packaging import version
 from ai_handler import process_text
 
-CURRENT_VERSION = "1.0.1" 
+CURRENT_VERSION = "2.0.0" 
 UPDATE_URL = "https://raw.githubusercontent.com/Fahrizal0112/NeuralBoard/refs/heads/main/version.json"
 
 SETTINGS_FILE = "settings.json"
@@ -38,6 +38,7 @@ app_state = {
     "provider": "OpenAI",
     "model_name": "gpt-4o-mini",
     "api_key": "",
+    "base_url": "",
     "page": None,
     "log_area": None
 }
@@ -73,7 +74,8 @@ def on_trigger():
             system_prompt=system_prompt, 
             provider=app_state["provider"],
             model_name=app_state["model_name"],
-            api_key=app_state["api_key"]
+            api_key=app_state["api_key"],
+            base_url=app_state.get("base_url", "")
         )
         
         # 4. Overwrite clipboard
@@ -146,10 +148,12 @@ def main(page: ft.Page):
     saved_provider = settings.get("provider", "OpenAI")
     saved_model = settings.get("model_name", "gpt-4o-mini")
     saved_api_key = settings.get(f"{saved_provider}_api_key", "")
+    saved_base_url = settings.get("base_url", "")
     
     app_state["provider"] = saved_provider
     app_state["model_name"] = saved_model
     app_state["api_key"] = saved_api_key
+    app_state["base_url"] = saved_base_url
 
     # --- LOGIKA CEK UPDATE ---
     def check_for_update():
@@ -230,6 +234,7 @@ def main(page: ft.Page):
         api_key_input.value = saved_key
         
         # Set default model name hint based on provider
+        base_url_input.visible = False
         if app_state["provider"] == "OpenAI":
             model_name_input.value = "gpt-4o-mini"
         elif app_state["provider"] == "Gemini":
@@ -238,18 +243,23 @@ def main(page: ft.Page):
             model_name_input.value = "glm-4-flash"
         elif app_state["provider"] == "OpenRouter":
             model_name_input.value = "google/gemini-2.5-pro"
+        elif app_state["provider"] == "Custom":
+            model_name_input.value = current_settings.get("model_name", "")
+            base_url_input.visible = True
             
         page.update()
         
     def save_settings(e):
         app_state["model_name"] = model_name_input.value.strip()
         app_state["api_key"] = api_key_input.value.strip()
+        app_state["base_url"] = base_url_input.value.strip()
         
         # Save to local storage
         current_settings = load_settings()
         current_settings["provider"] = app_state["provider"]
         current_settings["model_name"] = app_state["model_name"]
         current_settings[f"{app_state['provider']}_api_key"] = app_state["api_key"]
+        current_settings["base_url"] = app_state["base_url"]
         save_settings_to_file(current_settings)
         
         log(f"Settings Saved | Provider: {app_state['provider']} | Model: {app_state['model_name']}")
@@ -277,7 +287,8 @@ def main(page: ft.Page):
             ft.dropdown.Option("OpenAI"),
             ft.dropdown.Option("Gemini"),
             ft.dropdown.Option("GLM"),
-            ft.dropdown.Option("OpenRouter")
+            ft.dropdown.Option("OpenRouter"),
+            ft.dropdown.Option("Custom")
         ],
         value=saved_provider,
         on_select=provider_changed,
@@ -293,6 +304,12 @@ def main(page: ft.Page):
         value=saved_api_key,
         password=True, 
         can_reveal_password=True
+    )
+    
+    base_url_input = ft.TextField(
+        label="Custom Base URL (e.g. http://localhost:11434/v1)", 
+        value=saved_base_url,
+        visible=(saved_provider == "Custom")
     )
     
     save_btn = ft.ElevatedButton(
@@ -323,6 +340,7 @@ def main(page: ft.Page):
         provider_dropdown,
         model_name_input,
         api_key_input,
+        base_url_input,
         ft.Row([save_btn], alignment=ft.MainAxisAlignment.END),
         ft.Divider(),
         app_state["log_area"]
